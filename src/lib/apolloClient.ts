@@ -2,11 +2,11 @@ import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client'
 import { setContext } from '@apollo/client/link/context'
 
 const httpLink = createHttpLink({
-  uri: 'https://take-home-be.onrender.com/api'
+  uri: process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT
 })
 
 const authLink = setContext((_, { headers }) => {
-  const token = localStorage.getItem('visitorToken')
+  const token = process.env.GRAPHQL_AUTH_TOKEN || localStorage.getItem('visitorToken')
   return {
     headers: {
       ...headers,
