@@ -63,7 +63,7 @@ interface CartItem {
 
 interface Cart {
     _id: string
-    items: CartItem[]
+    items: Array<CartItem>
 }
 
 export default function Cart() {

@@ -1,6 +1,7 @@
 import { gql, useMutation, useQuery } from '@apollo/client'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import { toast } from 'react-toastify'
+import { useState, useEffect } from 'react'
 
 const GET_PRODUCTS = gql`
     query GetProducts {
@@ -12,6 +13,20 @@ const GET_PRODUCTS = gql`
                 availableQuantity
             }
             total
+        }
+    }
+`
+
+const GET_CART = gql`
+    query GetCart {
+        getCart {
+            _id
+            items {
+                _id
+                product {
+                    _id
+                }
+            }
         }
     }
 `
@@ -46,11 +61,49 @@ interface GetProductsResponse {
     }
 }
 
+interface CartItem {
+    _id: string
+    product: {
+        _id: string
+        title: string
+    }
+}
+
 export default function ProductList() {
   const { data, loading, error } = useQuery<GetProductsResponse>(GET_PRODUCTS)
+  const { data: cartData } = useQuery(GET_CART)  // Query cart data
   const [addItem] = useMutation(ADD_ITEM_TO_CART)
+  const [addedToCart, setAddedToCart] = useState<string[]>([])
+  const [outOfStock, setOutOfStock] = useState<string[]>([])
+
+  useEffect(() => {
+    if (cartData?.getCart?.items) {
+      const cartItemIds = cartData.getCart.items.map((item: CartItem) => item.product._id)
+      setAddedToCart(cartItemIds)
+    }
+  }, [cartData])
+
+  useEffect(() => {
+    if (data?.getProducts?.products) {
+      const outOfStockIds = data.getProducts.products
+        .filter(product => product.availableQuantity === 0)
+        .map(product => product._id)
+
+      if (outOfStockIds.length > 0) setOutOfStock(outOfStockIds)
+    }
+  }, [data])
 
   const handleAddToCart = async (productId: string) => {
+    if (addedToCart.includes(productId)) {
+      toast.info('Product already in the cart!')
+      return
+    }
+
+    if (outOfStock.includes(productId)) {
+      toast.error('This product is out of stock!')
+      return
+    }
+
     try {
       await addItem({
         variables: {
@@ -60,6 +113,7 @@ export default function ProductList() {
           }
         }
       })
+      setAddedToCart((prev) => [...prev, productId])
       toast.success('Product added to cart!')
     } catch (error) {
       console.error('Error adding product to cart:', error)
@@ -97,12 +151,28 @@ export default function ProductList() {
                 <h5 className='card-title text-primary'>{product.title}</h5>
                 <p className='card-text fw-bold'>${product.cost.toFixed(2)}</p>
                 <p className='card-text'>Available: {product.availableQuantity}</p>
-                <button
-                  className='btn btn-primary'
-                  onClick={() => handleAddToCart(product._id)}
-                >
-                  Add to Cart
-                </button>
+
+                {product.availableQuantity === 0 ? (
+                  <button
+                    className='btn btn-danger'
+                    disabled
+                  >
+                    <i className='bi bi-x-circle'></i> Out of Stock
+                  </button>
+                ) : (
+                  <button
+                    className={`btn ${addedToCart.includes(product._id) ? 'btn-success' : 'btn-primary'}`}
+                    onClick={() => handleAddToCart(product._id)}
+                  >
+                    {addedToCart.includes(product._id) ? (
+                      <>
+                        <i className='bi bi-check-circle'></i> Added
+                      </>
+                    ) : (
+                      'Add to Cart'
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           </div>
