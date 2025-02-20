@@ -1,6 +1,7 @@
 import { gql, useMutation, useQuery, useSubscription } from '@apollo/client'
 import { useState } from 'react'
 import Link from 'next/link'
+import { toast } from 'react-toastify'
 
 const GET_CART = gql`
     query GetCart {
@@ -96,77 +97,47 @@ export default function Cart() {
   const [removeItem] = useMutation(REMOVE_ITEM_FROM_CART)
   const [updateItemQuantity] = useMutation(UPDATE_ITEM_QUANTITY)
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({})
+  const [updatingItemId, setUpdatingItemId] = useState<string | null>(null) // Track updating item
+  const [cartUpdates, setCartUpdates] = useState<{ event: string; item: CartItem }[]>([])
+  const [showModal, setShowModal] = useState(false)
+  const [removingItemId, setRemovingItemId] = useState<string | null>(null) // Track removing item
 
   useSubscription(CART_ITEM_SUBSCRIPTION, {
     onData: ({ data }) => {
-      const { event } = data.data.cartItemUpdate
-      if (event === 'ITEM_OUT_OF_STOCK') {
-        refetch().then()
-      } else if (event === 'ITEM_QUANTITY_UPDATED') {
-        refetch().then()
-      }
+      const { event, payload } = data.data.cartItemUpdate
+      setCartUpdates((prev) => [...prev, { event, item: payload }])
+      setShowModal(true)
+      refetch().then()
     }
   })
 
-  const handleRemoveItem = async (cartItemId: string) => {
-    try {
-      await removeItem({
-        variables: {
-          input: {
-            cartItemId
-          }
-        },
-        update: (cache) => {
-          const cartData = cache.readQuery<{ getCart: Cart }>({ query: GET_CART })
-          if (cartData) {
-            const updatedItems = cartData.getCart.items.filter(item => item._id !== cartItemId)
-            cache.writeQuery({
-              query: GET_CART,
-              data: {
-                getCart: {
-                  ...cartData.getCart,
-                  items: updatedItems
-                }
-              }
-            })
-          }
-        }
+  const handleRemoveItem = (cartItemId: string) => {
+    setRemovingItemId(cartItemId)
+    removeItem({ variables: { input: { cartItemId } } })
+      .then(() => {
+        toast.success('Item removed successfully!')
       })
-    } catch (error) {
-      console.error('Error removing item from cart:', error)
-    }
+      .catch(() => {
+        toast.error('Failed to remove item.')
+      })
+      .finally(() => setRemovingItemId(null))
   }
 
-  const handleUpdateQuantity = async (cartItemId: string, quantity: number) => {
-    try {
-      await updateItemQuantity({
-        variables: {
-          input: {
-            cartItemId,
-            quantity
-          }
-        },
-        update: (cache) => {
-          const cartData = cache.readQuery<{ getCart: Cart }>({ query: GET_CART })
-          if (cartData) {
-            const updatedItems = cartData.getCart.items.map(item =>
-              item._id === cartItemId ? { ...item, quantity } : item
-            )
-            cache.writeQuery({
-              query: GET_CART,
-              data: {
-                getCart: {
-                  ...cartData.getCart,
-                  items: updatedItems
-                }
-              }
-            })
-          }
-        }
+  const handleUpdateQuantity = (cartItemId: string, quantity: number) => {
+    setUpdatingItemId(cartItemId)
+    updateItemQuantity({ variables: { input: { cartItemId, quantity } } })
+      .then(() => {
+        toast.success('Quantity updated successfully!')
       })
-    } catch (error) {
-      console.error('Error updating item quantity:', error)
-    }
+      .catch(() => {
+        toast.error('Failed to update quantity.')
+      })
+      .finally(() => setUpdatingItemId(null))
+  }
+
+  const handleAcknowledge = () => {
+    setCartUpdates([])
+    setShowModal(false)
   }
 
   if (loading) {
@@ -198,7 +169,10 @@ export default function Cart() {
           <div key={item._id} className='card mb-3'>
             <div className='card-body'>
               <h5 className='card-title'>{item.product.title}</h5>
-              <p className='card-text'>${item.product.cost.toFixed(2)}</p>
+              <p className='card-text'>
+                <span className='fw-bold'>Price: </span>
+               ${item.product.cost.toFixed(2)}
+              </p>
               <div className='d-flex align-items-center'>
                 <input
                   type='number'
@@ -215,19 +189,43 @@ export default function Cart() {
                 <button
                   className='btn btn-primary me-2'
                   onClick={() => handleUpdateQuantity(item._id, quantities[item._id] || item.quantity)}
+                  disabled={updatingItemId === item._id} // Disable button if updating
                 >
+                  {updatingItemId === item._id && <span className='spinner-border spinner-border-sm me-2' role='status' aria-hidden='true'></span>}
                                     Update Quantity
                 </button>
                 <button
                   className='btn btn-danger'
                   onClick={() => handleRemoveItem(item._id)}
+                  disabled={removingItemId === item._id}
                 >
-                                    Remove
+                  {removingItemId === item._id && <span className='spinner-border spinner-border-sm me-2' role='status' aria-hidden='true'></span>}
+                    Remove
                 </button>
               </div>
             </div>
           </div>
         ))
+      )}
+
+      {showModal && (
+        <div className='modal fade show d-block' tabIndex={-1} role='dialog'>
+          <div className='modal-dialog'>
+            <div className='modal-content'>
+              <div className='modal-header'>
+                <h5 className='modal-title'>Cart Update</h5>
+              </div>
+              <div className='modal-body'>
+                {cartUpdates.map(({ event, item }) => (
+                  <p key={item._id}>{item.product.title} - {event === 'ITEM_OUT_OF_STOCK' ? 'Out of stock' : 'Quantity updated'}</p>
+                ))}
+              </div>
+              <div className='modal-footer'>
+                <button className='btn btn-primary' onClick={handleAcknowledge}>OK</button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
