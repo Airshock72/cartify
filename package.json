@@ -7,12 +7,14 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
-    "lint--fix": "eslint . --fix"
+    "lint": "eslint **/*.{ts,tsx}",
+    "lint--fix": "eslint **/*.{ts,tsx} --fix"
   },
   "dependencies": {
     "@apollo/client": "^3.13.1",
+    "bootstrap": "^5.3.3",
     "graphql": "^16.10.0",
+    "graphql-ws": "^6.0.4",
     "next": "15.1.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

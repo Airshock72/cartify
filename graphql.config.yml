@@ -1,0 +1,4 @@
+schema:
+  - https://take-home-be.onrender.com/api:
+      headers:
+        Authorization: Bearer ${TOKEN}
