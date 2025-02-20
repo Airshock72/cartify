@@ -13,7 +13,7 @@ export default function Home() {
   }, [router])
   return (
     <div>
-      <h1 className='text-center my-4'>Shopping Cart</h1>
+      <h1 className='text-center my-4 text-white'>Shopping Cart</h1>
       <ProductList />
     </div>
   )

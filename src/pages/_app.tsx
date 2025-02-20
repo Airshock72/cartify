@@ -1,3 +1,4 @@
+import '../styles/globals.css'
 import { ApolloProvider } from '@apollo/client'
 import client from '../lib/apolloClient'
 import 'bootstrap/dist/css/bootstrap.min.css'
