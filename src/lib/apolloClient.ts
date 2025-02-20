@@ -1,5 +1,6 @@
 import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client'
 import { setContext } from '@apollo/client/link/context'
+import { CartItem } from '@/types'
 
 const httpLink = createHttpLink({
   uri: process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT
@@ -15,9 +16,21 @@ const authLink = setContext((_, { headers }) => {
   }
 })
 
+const cache = new InMemoryCache({
+  typePolicies: {
+    Cart: {
+      fields: {
+        items: {
+          merge: (_, incoming: CartItem[]) => incoming
+        }
+      }
+    }
+  }
+})
+
 const client = new ApolloClient({
   link: authLink.concat(httpLink),
-  cache: new InMemoryCache()
+  cache
 })
 
 export default client

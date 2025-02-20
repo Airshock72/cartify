@@ -1,5 +1,6 @@
-import { gql, useQuery } from '@apollo/client'
+import { gql, useMutation, useQuery } from '@apollo/client'
 import 'bootstrap/dist/css/bootstrap.min.css'
+import { toast } from 'react-toastify'
 
 const GET_PRODUCTS = gql`
     query GetProducts {
@@ -11,6 +12,22 @@ const GET_PRODUCTS = gql`
                 availableQuantity
             }
             total
+        }
+    }
+`
+
+const ADD_ITEM_TO_CART = gql`
+    mutation AddItem($input: AddItemArgs!) {
+        addItem(input: $input) {
+            _id
+            items {
+                _id
+                product {
+                    _id
+                    title
+                }
+                quantity
+            }
         }
     }
 `
@@ -31,6 +48,24 @@ interface GetProductsResponse {
 
 export default function ProductList() {
   const { data, loading, error } = useQuery<GetProductsResponse>(GET_PRODUCTS)
+  const [addItem] = useMutation(ADD_ITEM_TO_CART)
+
+  const handleAddToCart = async (productId: string) => {
+    try {
+      await addItem({
+        variables: {
+          input: {
+            productId,
+            quantity: 1
+          }
+        }
+      })
+      toast.success('Product added to cart!')
+    } catch (error) {
+      console.error('Error adding product to cart:', error)
+      toast.error('Error adding product to cart!')
+    }
+  }
 
   if (loading)
     return (
@@ -62,6 +97,12 @@ export default function ProductList() {
                 <h5 className='card-title text-primary'>{product.title}</h5>
                 <p className='card-text fw-bold'>${product.cost.toFixed(2)}</p>
                 <p className='card-text'>Available: {product.availableQuantity}</p>
+                <button
+                  className='btn btn-primary'
+                  onClick={() => handleAddToCart(product._id)}
+                >
+                  Add to Cart
+                </button>
               </div>
             </div>
           </div>

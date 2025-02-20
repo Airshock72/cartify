@@ -11,9 +11,9 @@ export default function Home() {
       router.push('/register').then()
     }
   }, [router])
+
   return (
     <div>
-      <h1 className='text-center my-4 text-white'>Shopping Cart</h1>
       <ProductList />
     </div>
   )
