@@ -1,4 +1,4 @@
-import { gql, useMutation, useQuery } from '@apollo/client'
+import { gql, useMutation, useQuery, useSubscription } from '@apollo/client'
 import { useState } from 'react'
 import Link from 'next/link'
 
@@ -6,12 +6,14 @@ const GET_CART = gql`
     query GetCart {
         getCart {
             _id
+            hash
             items {
                 _id
                 product {
                     _id
                     title
                     cost
+                    availableQuantity
                 }
                 quantity
             }
@@ -23,6 +25,7 @@ const REMOVE_ITEM_FROM_CART = gql`
     mutation RemoveItem($input: RemoveItemArgs!) {
         removeItem(input: $input) {
             _id
+            hash
             items {
                 _id
                 product {
@@ -51,26 +54,59 @@ const UPDATE_ITEM_QUANTITY = gql`
     }
 `
 
+const CART_ITEM_SUBSCRIPTION = gql`
+    subscription CartItemUpdate {
+        cartItemUpdate {
+            event
+            payload {
+                _id
+                product {
+                    _id
+                    title
+                    cost
+                    availableQuantity
+                }
+                quantity
+            }
+        }
+    }
+`
+
 interface CartItem {
     _id: string
     product: {
         _id: string
         title: string
         cost: number
+        availableQuantity: number
     }
     quantity: number
 }
 
 interface Cart {
     _id: string
+    hash: string
     items: Array<CartItem>
 }
 
 export default function Cart() {
-  const { data, loading, error } = useQuery<{ getCart: Cart }>(GET_CART)
+  const { data, loading, error, refetch } = useQuery<{ getCart: Cart }>(GET_CART, {
+    pollInterval: 5000 // Poll every 5 seconds
+  })
   const [removeItem] = useMutation(REMOVE_ITEM_FROM_CART)
   const [updateItemQuantity] = useMutation(UPDATE_ITEM_QUANTITY)
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({})
+
+  useSubscription(CART_ITEM_SUBSCRIPTION, {
+    onData: ({ data }) => {
+      const { event } = data.data.cartItemUpdate
+      if (event === 'ITEM_OUT_OF_STOCK') {
+        refetch().then()
+      } else if (event === 'ITEM_QUANTITY_UPDATED') {
+        refetch().then()
+      }
+    }
+  })
 
   const handleRemoveItem = async (cartItemId: string) => {
     try {
