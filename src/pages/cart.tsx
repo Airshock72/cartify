@@ -124,6 +124,11 @@ export default function Cart() {
   }
 
   const handleUpdateQuantity = (cartItemId: string, quantity: number) => {
+    const cartItem = data?.getCart?.items.find(item => item._id === cartItemId)
+    if (cartItem && quantity > cartItem.product.availableQuantity) {
+      toast.error(`Only ${cartItem.product.availableQuantity} items are available. Please choose a smaller quantity.`)
+      return
+    }
     setUpdatingItemId(cartItemId)
     updateItemQuantity({ variables: { input: { cartItemId, quantity } } })
       .then(() => {
