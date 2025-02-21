@@ -1,6 +1,22 @@
 import Link from 'next/link'
+import { useRouter } from 'next/router'
+import { useEffect, useState } from 'react'
 
 export default function Navbar() {
+  const router = useRouter()
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+  useEffect(() => {
+    const token = localStorage.getItem('visitorToken')
+    setIsAuthenticated(!!token)
+  }, [])
+
+  const handleLogout = () => {
+    localStorage.removeItem('visitorToken')
+    setIsAuthenticated(false)
+    router.push('/register').then()
+  }
+
   return (
     <nav className='navbar navbar-expand-lg navbar-dark bg-dark'>
       <div className='container-fluid'>
@@ -20,6 +36,11 @@ export default function Navbar() {
               </Link>
             </li>
           </ul>
+          {isAuthenticated && (
+            <button className='btn btn-outline-light' onClick={handleLogout}>
+                  Logout
+            </button>
+          )}
         </div>
       </div>
     </nav>

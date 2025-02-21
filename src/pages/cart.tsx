@@ -1,9 +1,10 @@
 import { gql, useMutation, useQuery, useSubscription } from '@apollo/client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { toast } from 'react-toastify'
 import validator from 'validator'
 import { z } from 'zod'
+import { useRouter } from 'next/router'
 
 const GET_CART = gql`
     query GetCart {
@@ -102,6 +103,7 @@ export const cartUpdateItemQuantitySchema = z.object({
 })
 
 export default function Cart() {
+  const router = useRouter()
   const { data, loading, error, refetch } = useQuery<{ getCart: Cart }>(GET_CART, { pollInterval: 5000 })
   const [removeItem] = useMutation(REMOVE_ITEM_FROM_CART)
   const [updateItemQuantity] = useMutation(UPDATE_ITEM_QUANTITY)
@@ -110,6 +112,13 @@ export default function Cart() {
   const [cartUpdates, setCartUpdates] = useState<{ event: string; item: CartItem }[]>([])
   const [showModal, setShowModal] = useState(false)
   const [removingItemId, setRemovingItemId] = useState<string | null>(null)
+
+  useEffect(() => {
+    const token = localStorage.getItem('visitorToken')
+    if (!token) {
+      router.push('/register').then()
+    }
+  }, [router])
 
   useSubscription(CART_ITEM_SUBSCRIPTION, {
     onData: ({ data }) => {
