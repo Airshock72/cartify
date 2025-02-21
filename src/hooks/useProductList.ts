@@ -13,6 +13,7 @@ interface UseProductList {
     data: GetProductsResponse | undefined
     addedToCart: Array<string>
     handleAddToCart: (productId: string) => void
+    loadingStates: Record<string, boolean>
 }
 
 const useProductList = (): UseProductList => {
@@ -21,8 +22,10 @@ const useProductList = (): UseProductList => {
   const [addItem] = useMutation(ADD_ITEM_TO_CART)
   const [addedToCart, setAddedToCart] = useState<Array<string>>([])
   const [outOfStock, setOutOfStock] = useState<Array<string>>([])
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({})
 
   const handleAddToCart = async (productId: string) => {
+    setLoadingStates((prev) => ({ ...prev, [productId]: true }))
     if (addedToCart.includes(productId)) {
       toast.info('Product already in the cart!')
       return
@@ -55,6 +58,8 @@ const useProductList = (): UseProductList => {
         console.error('Error adding product to cart:', error)
         toast.error('Error adding product to cart!')
       }
+    } finally {
+      setLoadingStates((prev) => ({ ...prev, [productId]: false }))
     }
   }
 
@@ -80,7 +85,8 @@ const useProductList = (): UseProductList => {
     loading,
     error,
     addedToCart,
-    handleAddToCart
+    handleAddToCart,
+    loadingStates
   }
 }
 

@@ -8,7 +8,8 @@ const ProductList = () => {
     error,
     data,
     addedToCart,
-    handleAddToCart
+    handleAddToCart,
+    loadingStates
   } = useProductList()
 
   if (loading) return <ProductListLoading />
@@ -28,18 +29,21 @@ const ProductList = () => {
                 <p className='card-text'>Available: {product.availableQuantity}</p>
 
                 {product.availableQuantity === 0 ? (
-                  <button
-                    className='btn btn-danger'
-                    disabled
-                  >
+                  <button className='btn btn-danger' disabled>
                     <i className='bi bi-x-circle'></i> Out of Stock
                   </button>
                 ) : (
                   <button
                     className={`btn ${addedToCart.includes(product._id) ? 'btn-success' : 'btn-primary'}`}
                     onClick={() => handleAddToCart(product._id)}
+                    disabled={loadingStates[product._id] || addedToCart.includes(product._id)}
                   >
-                    {addedToCart.includes(product._id) ? (
+                    {loadingStates[product._id] ? (
+                      <>
+                        <span className='spinner-border spinner-border-sm me-2' role='status' aria-hidden='true'></span>
+                                  Adding...
+                      </>
+                    ) : addedToCart.includes(product._id) ? (
                       <>
                         <i className='bi bi-check-circle'></i> Added
                       </>
