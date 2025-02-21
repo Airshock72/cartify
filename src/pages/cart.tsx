@@ -1,187 +1,25 @@
-import { gql, useMutation, useQuery, useSubscription } from '@apollo/client'
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { toast } from 'react-toastify'
-import validator from 'validator'
-import { z } from 'zod'
-import { useRouter } from 'next/router'
+import useCart from '@/hooks/useCart'
+import Loading from '@/components/Loading'
+import Modal from '@/components/Modal'
 
-const GET_CART = gql`
-    query GetCart {
-        getCart {
-            _id
-            hash
-            items {
-                _id
-                product {
-                    _id
-                    title
-                    cost
-                    availableQuantity
-                }
-                quantity
-            }
-        }
-    }
-`
+const CartModule = () => {
+  const {
+    data,
+    loading,
+    error,
+    quantities,
+    setQuantities,
+    handleUpdateQuantity,
+    updatingItemId,
+    handleRemoveItem,
+    removingItemId,
+    showModal,
+    cartUpdates,
+    handleAcknowledge
+  } = useCart()
 
-const REMOVE_ITEM_FROM_CART = gql`
-    mutation RemoveItem($input: RemoveItemArgs!) {
-        removeItem(input: $input) {
-            _id
-            hash
-            items {
-                _id
-                product {
-                    _id
-                    title
-                }
-                quantity
-            }
-        }
-    }
-`
-
-const UPDATE_ITEM_QUANTITY = gql`
-    mutation UpdateItemQuantity($input: UpdateItemQuantityArgs!) {
-        updateItemQuantity(input: $input) {
-            _id
-            items {
-                _id
-                product {
-                    _id
-                    title
-                }
-                quantity
-            }
-        }
-    }
-`
-
-const CART_ITEM_SUBSCRIPTION = gql`
-    subscription CartItemUpdate {
-        cartItemUpdate {
-            event
-            payload {
-                _id
-                product {
-                    _id
-                    title
-                    cost
-                    availableQuantity
-                }
-                quantity
-            }
-        }
-    }
-`
-
-interface CartItem {
-    _id: string
-    product: {
-        _id: string
-        title: string
-        cost: number
-        availableQuantity: number
-    }
-    quantity: number
-}
-
-interface Cart {
-    _id: string
-    hash: string
-    items: Array<CartItem>
-}
-
-export const cartRemoveItemSchema = z.object({
-  cartItemId: z.string().refine(input => validator.isMongoId(input), 'Invalid cart item ID')
-})
-
-export const cartUpdateItemQuantitySchema = z.object({
-  cartItemId: z.string().refine(input => validator.isMongoId(input), 'Invalid cart item ID'),
-  quantity: z.number().min(1)
-})
-
-export default function Cart() {
-  const router = useRouter()
-  const { data, loading, error, refetch } = useQuery<{ getCart: Cart }>(GET_CART, { pollInterval: 5000 })
-  const [removeItem] = useMutation(REMOVE_ITEM_FROM_CART)
-  const [updateItemQuantity] = useMutation(UPDATE_ITEM_QUANTITY)
-  const [quantities, setQuantities] = useState<{ [key: string]: number }>({})
-  const [updatingItemId, setUpdatingItemId] = useState<string | null>(null)
-  const [cartUpdates, setCartUpdates] = useState<{ event: string; item: CartItem }[]>([])
-  const [showModal, setShowModal] = useState(false)
-  const [removingItemId, setRemovingItemId] = useState<string | null>(null)
-
-  useEffect(() => {
-    const token = localStorage.getItem('visitorToken')
-    if (!token) {
-      router.push('/register').then()
-    }
-  }, [router])
-
-  useSubscription(CART_ITEM_SUBSCRIPTION, {
-    onData: ({ data }) => {
-      const { event, payload } = data.data.cartItemUpdate
-      setCartUpdates((prev) => [...prev, { event, item: payload }])
-      setShowModal(true)
-      refetch().then()
-    }
-  })
-
-  const handleRemoveItem = (cartItemId: string) => {
-    try {
-      cartRemoveItemSchema.parse({ cartItemId })
-
-      setRemovingItemId(cartItemId)
-      removeItem({ variables: { input: { cartItemId } } })
-        .then(() => {
-          toast.success('Item removed successfully!')
-          refetch().then()
-        })
-        .catch(() => {
-          toast.error('Failed to remove item.')
-        })
-        .finally(() => setRemovingItemId(null))
-    } catch (error) {
-      if (error instanceof z.ZodError) toast.error(error.errors[0]?.message)
-    }
-  }
-
-  const handleUpdateQuantity = (cartItemId: string, quantity: number) => {
-    try {
-      cartUpdateItemQuantitySchema.parse({ cartItemId, quantity })
-
-      const cartItem = data?.getCart?.items.find(item => item._id === cartItemId)
-      if (cartItem && quantity > cartItem.product.availableQuantity) {
-        toast.error(`Only ${cartItem.product.availableQuantity} items are available. Please choose a smaller quantity.`)
-        return
-      }
-
-      setUpdatingItemId(cartItemId)
-      updateItemQuantity({ variables: { input: { cartItemId, quantity } } })
-        .then(() => toast.success('Quantity updated successfully!'))
-        .catch(() => toast.error('Failed to update quantity.'))
-        .finally(() => setUpdatingItemId(null))
-    } catch (error) {
-      if (error instanceof z.ZodError) toast.error(error.errors[0]?.message)
-    }
-  }
-
-  const handleAcknowledge = () => {
-    setCartUpdates([])
-    setShowModal(false)
-  }
-
-  if (loading) {
-    return (
-      <div className='container mt-5 d-flex justify-content-center align-items-center' style={{ minHeight: '300px' }}>
-        <div className='spinner-border text-primary' role='status'>
-          <span className='visually-hidden'>Loading...</span>
-        </div>
-      </div>
-    )
-  }
+  if (loading) return <Loading />
 
   if (error) return <p>Error: {error.message}</p>
 
@@ -243,28 +81,10 @@ export default function Cart() {
           </div>
         ))
       )}
-
-      {showModal && (
-        <div className='modal fade show d-block' tabIndex={-1} role='dialog'>
-          <div className='modal-dialog'>
-            <div className='modal-content'>
-              <div className='modal-header'>
-                <h5 className='modal-title'>Cart Update</h5>
-              </div>
-              <div className='modal-body'>
-                {cartUpdates.map(({ event, item }) => (
-                  <p key={item._id}>
-                    {item.product.title} - {event === 'ITEM_OUT_OF_STOCK' ? 'Out of stock' : 'Quantity updated'}
-                  </p>
-                ))}
-              </div>
-              <div className='modal-footer'>
-                <button className='btn btn-primary' onClick={handleAcknowledge}>OK</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {showModal && <Modal cartUpdates={cartUpdates} handleAcknowledge={handleAcknowledge} />}
     </div>
   )
 }
+
+
+export default CartModule

@@ -11,9 +11,7 @@ const VALID_ROUTES = ['/', '/cart']
 
 function MyApp({ Component, pageProps }: AppProps) {
   const router = useRouter()
-
   const showNavbar = VALID_ROUTES.includes(router.pathname)
-
   return (
     <ApolloProvider client={client}>
       {showNavbar && <Navbar />}

@@ -1,22 +1,8 @@
 import Link from 'next/link'
-import { useRouter } from 'next/router'
-import { useEffect, useState } from 'react'
+import useNavbar from '@/hooks/useNavbar'
 
 export default function Navbar() {
-  const router = useRouter()
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-
-  useEffect(() => {
-    const token = localStorage.getItem('visitorToken')
-    setIsAuthenticated(!!token)
-  }, [])
-
-  const handleLogout = () => {
-    localStorage.removeItem('visitorToken')
-    setIsAuthenticated(false)
-    router.push('/register').then()
-  }
-
+  const { isAuthenticated, handleLogout } = useNavbar()
   return (
     <nav className='navbar navbar-expand-lg navbar-dark bg-dark'>
       <div className='container-fluid'>
