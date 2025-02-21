@@ -1,9 +1,11 @@
-import { ApolloError, gql, useMutation, useQuery } from '@apollo/client'
+import { ApolloError, useMutation, useQuery } from '@apollo/client'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 import { z } from 'zod'
 import { CartItemForProduct, GetProductsResponse } from '@/types'
 import { cartAddItemSchema } from '@/helpers'
+import { GET_CART_FOR_PRODUCTS, GET_PRODUCTS } from '@/graphql/query'
+import { ADD_ITEM_TO_CART } from '@/graphql/mutation'
 
 interface UseProductList {
     loading: boolean
@@ -13,53 +15,9 @@ interface UseProductList {
     handleAddToCart: (productId: string) => void
 }
 
-const GET_PRODUCTS = gql`
-    query GetProducts {
-        getProducts {
-            products {
-                _id
-                title
-                cost
-                availableQuantity
-            }
-            total
-        }
-    }
-`
-
-const GET_CART = gql`
-    query GetCart {
-        getCart {
-            _id
-            items {
-                _id
-                product {
-                    _id
-                }
-            }
-        }
-    }
-`
-
-const ADD_ITEM_TO_CART = gql`
-    mutation AddItem($input: AddItemArgs!) {
-        addItem(input: $input) {
-            _id
-            items {
-                _id
-                product {
-                    _id
-                    title
-                }
-                quantity
-            }
-        }
-    }
-`
-
 const useProductList = (): UseProductList => {
   const { data, loading, error } = useQuery<GetProductsResponse>(GET_PRODUCTS)
-  const { data: cartData, refetch: refetchCart } = useQuery(GET_CART)
+  const { data: cartData, refetch: refetchCart } = useQuery(GET_CART_FOR_PRODUCTS)
   const [addItem] = useMutation(ADD_ITEM_TO_CART)
   const [addedToCart, setAddedToCart] = useState<Array<string>>([])
   const [outOfStock, setOutOfStock] = useState<Array<string>>([])

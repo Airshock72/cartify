@@ -1,15 +1,7 @@
 import { Dispatch, FormEvent, SetStateAction, useEffect, useState } from 'react'
-import { gql, useMutation } from '@apollo/client'
+import { useMutation } from '@apollo/client'
 import { useRouter } from 'next/router'
-
-const REGISTER_MUTATION = gql`
-    mutation Register {
-        register {
-            _id
-            token
-        }
-    }
-`
+import { REGISTER_MUTATION } from '@/graphql/mutation'
 
 interface UseRegister {
     handleRegister: (e: FormEvent) => void

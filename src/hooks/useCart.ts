@@ -1,10 +1,13 @@
 import { Dispatch, SetStateAction, useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
-import { ApolloError, gql, useMutation, useQuery, useSubscription } from '@apollo/client'
+import { ApolloError, useMutation, useQuery, useSubscription } from '@apollo/client'
 import { CardUpdate, Cart, CartItem } from '@/types'
 import { toast } from 'react-toastify'
 import { z } from 'zod'
 import { cartRemoveItemSchema, cartUpdateItemQuantitySchema } from '@/helpers'
+import { GET_CART } from '@/graphql/query'
+import { REMOVE_ITEM_FROM_CART, UPDATE_ITEM_QUANTITY } from '@/graphql/mutation'
+import { CART_ITEM_SUBSCRIPTION } from '@/graphql/subscription'
 
 interface UseCart {
     data: { getCart: Cart } | undefined
@@ -20,76 +23,6 @@ interface UseCart {
     cartUpdates: Array<CardUpdate>
     handleAcknowledge: () => void
 }
-
-const GET_CART = gql`
-    query GetCart {
-        getCart {
-            _id
-            hash
-            items {
-                _id
-                product {
-                    _id
-                    title
-                    cost
-                    availableQuantity
-                }
-                quantity
-            }
-        }
-    }
-`
-
-const REMOVE_ITEM_FROM_CART = gql`
-    mutation RemoveItem($input: RemoveItemArgs!) {
-        removeItem(input: $input) {
-            _id
-            hash
-            items {
-                _id
-                product {
-                    _id
-                    title
-                }
-                quantity
-            }
-        }
-    }
-`
-
-const UPDATE_ITEM_QUANTITY = gql`
-    mutation UpdateItemQuantity($input: UpdateItemQuantityArgs!) {
-        updateItemQuantity(input: $input) {
-            _id
-            items {
-                _id
-                product {
-                    _id
-                    title
-                }
-                quantity
-            }
-        }
-    }
-`
-
-const CART_ITEM_SUBSCRIPTION = gql`
-    subscription CartItemUpdate {
-        cartItemUpdate {
-            event
-            payload {
-                _id
-                product {
-                    _id
-                    title
-                    cost
-                    availableQuantity
-                }
-                quantity
-            }
-        }
-    }
-`
 
 const useCart = (): UseCart => {
   const { data, loading, error, refetch } = useQuery<{ getCart: Cart }>(GET_CART, { pollInterval: 5000 })
