@@ -93,29 +93,23 @@ interface Cart {
 }
 
 export const cartRemoveItemSchema = z.object({
-  cartItemId: z
-    .string()
-    .refine((input) => validator.isMongoId(input), 'Invalid cart item ID')
+  cartItemId: z.string().refine(input => validator.isMongoId(input), 'Invalid cart item ID')
 })
 
 export const cartUpdateItemQuantitySchema = z.object({
-  cartItemId: z
-    .string()
-    .refine((input) => validator.isMongoId(input), 'Invalid cart item ID'),
+  cartItemId: z.string().refine(input => validator.isMongoId(input), 'Invalid cart item ID'),
   quantity: z.number().min(1)
 })
 
 export default function Cart() {
-  const { data, loading, error, refetch } = useQuery<{ getCart: Cart }>(GET_CART, {
-    pollInterval: 5000 // Poll every 5 seconds
-  })
+  const { data, loading, error, refetch } = useQuery<{ getCart: Cart }>(GET_CART, { pollInterval: 5000 })
   const [removeItem] = useMutation(REMOVE_ITEM_FROM_CART)
   const [updateItemQuantity] = useMutation(UPDATE_ITEM_QUANTITY)
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({})
-  const [updatingItemId, setUpdatingItemId] = useState<string | null>(null) // Track updating item
+  const [updatingItemId, setUpdatingItemId] = useState<string | null>(null)
   const [cartUpdates, setCartUpdates] = useState<{ event: string; item: CartItem }[]>([])
   const [showModal, setShowModal] = useState(false)
-  const [removingItemId, setRemovingItemId] = useState<string | null>(null) // Track removing item
+  const [removingItemId, setRemovingItemId] = useState<string | null>(null)
 
   useSubscription(CART_ITEM_SUBSCRIPTION, {
     onData: ({ data }) => {
@@ -203,8 +197,7 @@ export default function Cart() {
             <div className='card-body'>
               <h5 className='card-title'>{item.product.title}</h5>
               <p className='card-text'>
-                <span className='fw-bold'>Price: </span>
-               ${item.product.cost.toFixed(2)}
+                <span className='fw-bold'>Price: </span>${item.product.cost.toFixed(2)}
               </p>
               <div className='d-flex align-items-center'>
                 <input
@@ -222,9 +215,11 @@ export default function Cart() {
                 <button
                   className='btn btn-primary me-2'
                   onClick={() => handleUpdateQuantity(item._id, quantities[item._id] || item.quantity)}
-                  disabled={updatingItemId === item._id} // Disable button if updating
+                  disabled={updatingItemId === item._id}
                 >
-                  {updatingItemId === item._id && <span className='spinner-border spinner-border-sm me-2' role='status' aria-hidden='true'></span>}
+                  {updatingItemId === item._id && (
+                    <span className='spinner-border spinner-border-sm me-2' role='status' aria-hidden='true'></span>
+                  )}
                                     Update Quantity
                 </button>
                 <button
@@ -232,7 +227,9 @@ export default function Cart() {
                   onClick={() => handleRemoveItem(item._id)}
                   disabled={removingItemId === item._id}
                 >
-                  {removingItemId === item._id && <span className='spinner-border spinner-border-sm me-2' role='status' aria-hidden='true'></span>}
+                  {removingItemId === item._id && (
+                    <span className='spinner-border spinner-border-sm me-2' role='status' aria-hidden='true'></span>
+                  )}
                     Remove
                 </button>
               </div>
@@ -250,7 +247,9 @@ export default function Cart() {
               </div>
               <div className='modal-body'>
                 {cartUpdates.map(({ event, item }) => (
-                  <p key={item._id}>{item.product.title} - {event === 'ITEM_OUT_OF_STOCK' ? 'Out of stock' : 'Quantity updated'}</p>
+                  <p key={item._id}>
+                    {item.product.title} - {event === 'ITEM_OUT_OF_STOCK' ? 'Out of stock' : 'Quantity updated'}
+                  </p>
                 ))}
               </div>
               <div className='modal-footer'>
