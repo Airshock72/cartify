@@ -128,6 +128,7 @@ export default function Cart() {
       removeItem({ variables: { input: { cartItemId } } })
         .then(() => {
           toast.success('Item removed successfully!')
+          refetch().then()
         })
         .catch(() => {
           toast.error('Failed to remove item.')
@@ -150,12 +151,8 @@ export default function Cart() {
 
       setUpdatingItemId(cartItemId)
       updateItemQuantity({ variables: { input: { cartItemId, quantity } } })
-        .then(() => {
-          toast.success('Quantity updated successfully!')
-        })
-        .catch(() => {
-          toast.error('Failed to update quantity.')
-        })
+        .then(() => toast.success('Quantity updated successfully!'))
+        .catch(() => toast.error('Failed to update quantity.'))
         .finally(() => setUpdatingItemId(null))
     } catch (error) {
       if (error instanceof z.ZodError) toast.error(error.errors[0]?.message)

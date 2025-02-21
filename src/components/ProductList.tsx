@@ -81,7 +81,7 @@ export const cartAddItemSchema = z.object({
 
 export default function ProductList() {
   const { data, loading, error } = useQuery<GetProductsResponse>(GET_PRODUCTS)
-  const { data: cartData } = useQuery(GET_CART)  // Query cart data
+  const { data: cartData, refetch: refetchCart } = useQuery(GET_CART)
   const [addItem] = useMutation(ADD_ITEM_TO_CART)
   const [addedToCart, setAddedToCart] = useState<string[]>([])
   const [outOfStock, setOutOfStock] = useState<string[]>([])
@@ -128,6 +128,7 @@ export default function ProductList() {
       })
       setAddedToCart((prev) => [...prev, productId])
       toast.success('Product added to cart!')
+      await refetchCart()
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0]?.message)
