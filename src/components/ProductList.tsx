@@ -2,6 +2,8 @@ import { gql, useMutation, useQuery } from '@apollo/client'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import { toast } from 'react-toastify'
 import { useState, useEffect } from 'react'
+import { z } from 'zod'
+import validator from 'validator'
 
 const GET_PRODUCTS = gql`
     query GetProducts {
@@ -69,6 +71,14 @@ interface CartItem {
     }
 }
 
+export const cartAddItemSchema = z.object({
+  productId: z
+    .string()
+    .refine((input) => validator.isMongoId(input), 'Invalid product ID'),
+  quantity: z.number().min(1)
+})
+
+
 export default function ProductList() {
   const { data, loading, error } = useQuery<GetProductsResponse>(GET_PRODUCTS)
   const { data: cartData } = useQuery(GET_CART)  // Query cart data
@@ -105,6 +115,9 @@ export default function ProductList() {
     }
 
     try {
+      const input = { productId, quantity: 1 }
+      cartAddItemSchema.parse(input)
+
       await addItem({
         variables: {
           input: {
@@ -116,8 +129,12 @@ export default function ProductList() {
       setAddedToCart((prev) => [...prev, productId])
       toast.success('Product added to cart!')
     } catch (error) {
-      console.error('Error adding product to cart:', error)
-      toast.error('Error adding product to cart!')
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0]?.message)
+      } else {
+        console.error('Error adding product to cart:', error)
+        toast.error('Error adding product to cart!')
+      }
     }
   }
 

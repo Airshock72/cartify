@@ -2,6 +2,8 @@ import { gql, useMutation, useQuery, useSubscription } from '@apollo/client'
 import { useState } from 'react'
 import Link from 'next/link'
 import { toast } from 'react-toastify'
+import validator from 'validator'
+import { z } from 'zod'
 
 const GET_CART = gql`
     query GetCart {
@@ -90,6 +92,19 @@ interface Cart {
     items: Array<CartItem>
 }
 
+export const cartRemoveItemSchema = z.object({
+  cartItemId: z
+    .string()
+    .refine((input) => validator.isMongoId(input), 'Invalid cart item ID')
+})
+
+export const cartUpdateItemQuantitySchema = z.object({
+  cartItemId: z
+    .string()
+    .refine((input) => validator.isMongoId(input), 'Invalid cart item ID'),
+  quantity: z.number().min(1)
+})
+
 export default function Cart() {
   const { data, loading, error, refetch } = useQuery<{ getCart: Cart }>(GET_CART, {
     pollInterval: 5000 // Poll every 5 seconds
@@ -112,32 +127,45 @@ export default function Cart() {
   })
 
   const handleRemoveItem = (cartItemId: string) => {
-    setRemovingItemId(cartItemId)
-    removeItem({ variables: { input: { cartItemId } } })
-      .then(() => {
-        toast.success('Item removed successfully!')
-      })
-      .catch(() => {
-        toast.error('Failed to remove item.')
-      })
-      .finally(() => setRemovingItemId(null))
+    try {
+      cartRemoveItemSchema.parse({ cartItemId })
+
+      setRemovingItemId(cartItemId)
+      removeItem({ variables: { input: { cartItemId } } })
+        .then(() => {
+          toast.success('Item removed successfully!')
+        })
+        .catch(() => {
+          toast.error('Failed to remove item.')
+        })
+        .finally(() => setRemovingItemId(null))
+    } catch (error) {
+      if (error instanceof z.ZodError) toast.error(error.errors[0]?.message)
+    }
   }
 
   const handleUpdateQuantity = (cartItemId: string, quantity: number) => {
-    const cartItem = data?.getCart?.items.find(item => item._id === cartItemId)
-    if (cartItem && quantity > cartItem.product.availableQuantity) {
-      toast.error(`Only ${cartItem.product.availableQuantity} items are available. Please choose a smaller quantity.`)
-      return
+    try {
+      cartUpdateItemQuantitySchema.parse({ cartItemId, quantity })
+
+      const cartItem = data?.getCart?.items.find(item => item._id === cartItemId)
+      if (cartItem && quantity > cartItem.product.availableQuantity) {
+        toast.error(`Only ${cartItem.product.availableQuantity} items are available. Please choose a smaller quantity.`)
+        return
+      }
+
+      setUpdatingItemId(cartItemId)
+      updateItemQuantity({ variables: { input: { cartItemId, quantity } } })
+        .then(() => {
+          toast.success('Quantity updated successfully!')
+        })
+        .catch(() => {
+          toast.error('Failed to update quantity.')
+        })
+        .finally(() => setUpdatingItemId(null))
+    } catch (error) {
+      if (error instanceof z.ZodError) toast.error(error.errors[0]?.message)
     }
-    setUpdatingItemId(cartItemId)
-    updateItemQuantity({ variables: { input: { cartItemId, quantity } } })
-      .then(() => {
-        toast.success('Quantity updated successfully!')
-      })
-      .catch(() => {
-        toast.error('Failed to update quantity.')
-      })
-      .finally(() => setUpdatingItemId(null))
   }
 
   const handleAcknowledge = () => {
