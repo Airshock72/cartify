@@ -1,4 +1,4 @@
 schema:
-  - ${NEXT_PUBLIC_GRAPHQL_ENDPOINT}:
+  - 'https://take-home-be.onrender.com/api':
       headers:
         Authorization: Bearer ${GRAPHQL_AUTH_TOKEN}

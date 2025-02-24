@@ -3,7 +3,7 @@ import { setContext } from '@apollo/client/link/context'
 import { CartItem } from '@/types'
 
 const httpLink = createHttpLink({
-  uri: process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT
+  uri: process.env.NEXT_PUBLIC_GRAPHQL_URI || 'https://take-home-be.onrender.com/api'
 })
 
 const authLink = setContext((_, { headers }) => {
