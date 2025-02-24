@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useEffect, useState } from 'react'
+import { createRef, Dispatch, RefObject, SetStateAction, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/router'
 import { ApolloError, useMutation, useQuery, useSubscription } from '@apollo/client'
 import { CardUpdate, Cart, CartItem } from '@/types'
@@ -10,7 +10,6 @@ import { REMOVE_ITEM_FROM_CART, UPDATE_ITEM_QUANTITY } from '@/graphql/mutation'
 import { CART_ITEM_SUBSCRIPTION } from '@/graphql/subscription'
 
 interface UseCart {
-    data: { getCart: Cart } | undefined
     loading: boolean
     error?: ApolloError | undefined,
     quantities: { [p: string]: number }
@@ -22,6 +21,8 @@ interface UseCart {
     showModal: boolean
     cartUpdates: Array<CardUpdate>
     handleAcknowledge: () => void
+    cartItems: Array<CartItem>
+    itemRefs: RefObject<{[p: string]: RefObject<HTMLDivElement | null> }>
 }
 
 const useCart = (): UseCart => {
@@ -34,6 +35,8 @@ const useCart = (): UseCart => {
   const [showModal, setShowModal] = useState(false)
   const [removingItemId, setRemovingItemId] = useState<string | null>(null)
   const router = useRouter()
+  const [cartItems, setCartItems] = useState(data?.getCart?.items || [])
+  const itemRefs = useRef<{ [key: string]: RefObject<HTMLDivElement | null> }>({})
 
   useSubscription(CART_ITEM_SUBSCRIPTION, {
     onData: ({ data }) => {
@@ -95,10 +98,18 @@ const useCart = (): UseCart => {
     }
   }, [router])
 
-
+  useEffect(() => {
+    if (data?.getCart?.items) {
+      setCartItems(data.getCart.items)
+      data.getCart.items.forEach((item) => {
+        if (!itemRefs.current[item._id]) {
+          itemRefs.current[item._id] = createRef<HTMLDivElement>()
+        }
+      })
+    }
+  }, [data])
 
   return {
-    data,
     loading,
     error,
     updatingItemId,
@@ -109,7 +120,9 @@ const useCart = (): UseCart => {
     handleRemoveItem,
     removingItemId,
     showModal,
-    handleAcknowledge
+    handleAcknowledge,
+    cartItems,
+    itemRefs
   }
 }
 
