@@ -9,8 +9,7 @@
     "lint": "eslint **/*.{ts,tsx}",
     "lint--fix": "eslint **/*.{ts,tsx} --fix",
     "build": "next build",
-    "export": "next export",
-    "deploy": "next build && next export && gh-pages -d out -b gh-pages"
+    "deploy": "next build && gh-pages -d out -b gh-pages"
   },
   "dependencies": {
     "@apollo/client": "^3.13.1",

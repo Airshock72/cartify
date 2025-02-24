@@ -2,8 +2,9 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   reactStrictMode: false,
-  basePath: '/shopping-cart',
-  assetPrefix: '/shopping-cart/',
+  output: 'export',
+  basePath: '/cartify',
+  assetPrefix: '/cartify/',
   images: {
     unoptimized: true
   },
