@@ -11,7 +11,7 @@ class MyDocument extends Document {
             href='https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css'
             rel='stylesheet'
           />
-          <link rel='icon' href='/favicon.ico' />
+          <link rel='icon' href='/shopping-cart/favicon.ico' />
         </Head>
         <body>
           <Main />

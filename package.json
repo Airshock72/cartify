@@ -1,14 +1,16 @@
 {
-  "name": "shopping-cart",
+  "name": "cartify",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build",
     "start": "next start",
     "lint": "eslint **/*.{ts,tsx}",
-    "lint--fix": "eslint **/*.{ts,tsx} --fix"
+    "lint--fix": "eslint **/*.{ts,tsx} --fix",
+    "build": "next build",
+    "export": "next export",
+    "deploy": "next build && next export && gh-pages -d out -b gh-pages"
   },
   "dependencies": {
     "@apollo/client": "^3.13.1",
@@ -36,6 +38,7 @@
     "eslint-config-next": "15.1.7",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.3",
+    "gh-pages": "^6.3.0",
     "prettier": "^3.5.1",
     "typescript": "^5.7.3"
   }
